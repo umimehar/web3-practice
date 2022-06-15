@@ -8,6 +8,7 @@ import {
   Flex,
   Button,
   useToast,
+  useMemo,
 } from "@chakra-ui/react";
 import { Image } from "@components/Image";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { useAuth } from "src/context/AuthContext";
 import { queryClient } from "@util/sdks/react-query";
 import { ADAPTER_EVENTS } from "@web3auth/base";
 import Web3 from "web3";
+import { ethers } from 'ethers';
 
 export type NFTProps = {
   price: number;
@@ -37,18 +39,31 @@ export default function NFT(props: NFTProps) {
     web3AuthInstance,
   } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [sdk, setSdk] = useState<ThirdwebSDK>(null);
-
-  useEffect(() => {
-    if (!ethersProvider) return;
-    // add other configs
-    const sdk = ThirdwebSDK.fromSigner(ethersProvider.getSigner(), "rinkeby", {
+  // const [sdk, setSdk] = useState<ThirdwebSDK>(null);
+  const sdk: ThirdwebSDK = useMemo(() => {
+    if (!ethersProvider) return new ThirdwebSDK(ethers.getDefaultProvider());
+    return ThirdwebSDK.fromSigner(ethersProvider.getSigner(), "rinkeby", {
       gasless: {
         openzeppelin: { relayerUrl: process.env.NEXT_PUBLIC_RELAYER_URL },
       },
     });
-    setSdk(sdk);
   }, [ethersProvider]);
+
+  // useEffect(() => {
+  //   if (!ethersProvider) return;
+  //   // add other configs
+  //   const sdk = ThirdwebSDK.fromSigner(ethersProvider.getSigner(), "rinkeby", {
+  //     gasless: {
+  //       openzeppelin: { relayerUrl: process.env.NEXT_PUBLIC_RELAYER_URL },
+  //     },
+  //   });
+  //   setSdk(sdk);
+  // }, [ethersProvider]);
+
+  useEffect(() => {
+    sdk.on('transaction', console.log);
+    sdk.on('signature', console.log);
+  }, []);
 
   const toast = useToast();
 
@@ -74,6 +89,7 @@ export default function NFT(props: NFTProps) {
         const nftCollection = await sdk.getNFTCollection(
           process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS
         );
+
 
         // move this to sdk
         console.log(web3AuthInstance);

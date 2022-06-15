@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "name": "web3.io",
+  "description": "web3.io",
+  "icons": {
+    "60": "/assets/favs/firefox_app_60x60.png",
+    "128": "/assets/favs/firefox_app_128x128.png",
+    "512": "/assets/favs/firefox_app_512x512.png"
+  },
+  "developer": {
+    "name": "umimehar",
+    "url": "https://github.com/umimehar"
+  }
+}

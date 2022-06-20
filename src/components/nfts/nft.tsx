@@ -10,12 +10,11 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { Image } from "@components/Image";
-import { useEffect, useState } from "react";
-import { ThirdwebSDK } from "@thirdweb-dev/sdk";
+import { useEffect, useMemo, useState } from "react";
+import { NFTCollection, ThirdwebSDK } from "@thirdweb-dev/sdk";
 import { useAuth } from "src/context/AuthContext";
 import { queryClient } from "@util/sdks/react-query";
-import { ADAPTER_EVENTS } from "@web3auth/base";
-import Web3 from "web3";
+import { ethers } from "ethers";
 
 export type NFTProps = {
   price: number;
@@ -37,18 +36,42 @@ export default function NFT(props: NFTProps) {
     web3AuthInstance,
   } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [sdk, setSdk] = useState<ThirdwebSDK>(null);
-
-  useEffect(() => {
-    if (!ethersProvider) return;
-    // add other configs
-    const sdk = ThirdwebSDK.fromSigner(ethersProvider.getSigner(), "rinkeby", {
+  const [nftCollection, setNftCollection] = useState<NFTCollection>();
+  // const [sdk, setSdk] = useState<ThirdwebSDK>(null);
+  const sdk: ThirdwebSDK = useMemo(() => {
+    if (!ethersProvider) return new ThirdwebSDK(ethers.getDefaultProvider());
+    return new ThirdwebSDK(ethersProvider.getSigner(), {
       gasless: {
         openzeppelin: { relayerUrl: process.env.NEXT_PUBLIC_RELAYER_URL },
       },
     });
-    setSdk(sdk);
   }, [ethersProvider]);
+
+  useEffect(() => {
+    if (!sdk) return;
+    const getNFTCollection = async () => {
+      setNftCollection(
+        await sdk.getNFTCollection(process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS)
+      );
+    };
+    getNFTCollection();
+  }, [sdk]);
+
+  // useEffect(() => {
+  //   if (!ethersProvider) return;
+  //   // add other configs
+  //   const sdk = ThirdwebSDK.fromSigner(ethersProvider.getSigner(), "rinkeby", {
+  //     gasless: {
+  //       openzeppelin: { relayerUrl: process.env.NEXT_PUBLIC_RELAYER_URL },
+  //     },
+  //   });
+  //   setSdk(sdk);
+  // }, [ethersProvider]);
+
+  useEffect(() => {
+    if (!nftCollection) return;
+    nftCollection.events.listenToAllEvents(console.log);
+  }, [nftCollection]);
 
   const toast = useToast();
 
@@ -71,12 +94,11 @@ export default function NFT(props: NFTProps) {
           signature: data.signature,
           payload: data.payload,
         };
-        const nftCollection = await sdk.getNFTCollection(
-          process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS
-        );
+
+        console.log(data.payload);
 
         // move this to sdk
-        console.log(web3AuthInstance);
+        // console.log(web3AuthInstance);
         // mint nfts for openlogin
         // if (web3AuthInstance.connectedAdapterName === "openlogin") {
         //   // sign the transaction and send
@@ -96,9 +118,6 @@ export default function NFT(props: NFTProps) {
 
         // L1 vs L2
         // wolf and sheep game.
-        web3AuthInstance.on("mintWithSignature", (e) => {
-          console.log(e);
-        });
 
         await nftCollection.signature.mint(mintInput);
         // const web3 = new Web3(web3AuthInstance.provider as any);

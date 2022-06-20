@@ -112,7 +112,7 @@ export function AuthProvider({ children }: Props) {
         // }, 500);
         const provider = new ethers.providers.Web3Provider(
           web3AuthInstance.provider,
-          "any" // change that from env
+          "rinkeby" // change that from env
         );
         setEthersProvider(provider);
 

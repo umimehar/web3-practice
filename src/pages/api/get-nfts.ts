@@ -48,11 +48,16 @@ export default async function handler(
           if (nft.metadata.attributes) {
             // Find the id attribute of the current NFT
             // @ts-expect-error
-            const positionInMetadataArray = nft.metadata.attributes.id;
+            const mintedId = nft.metadata.attributes.id;
+            const positionInMetadataArray = nfts.findIndex(
+              (n) => n.id === mintedId
+            );
             // Change the minted status of the NFT metadata at the position of ID in the NFT metadata array
-            nfts[positionInMetadataArray].minted = true;
-            (nfts[positionInMetadataArray] as any).owner = nft.owner;
-            (nfts[positionInMetadataArray] as any).tokenId = nft.metadata.id;
+            if (positionInMetadataArray > -1) {
+              nfts[positionInMetadataArray].minted = true;
+              (nfts[positionInMetadataArray] as any).owner = nft.owner;
+              (nfts[positionInMetadataArray] as any).tokenId = nft.metadata.id;
+            }
           }
         });
       } catch (error) {
@@ -67,17 +72,16 @@ export default async function handler(
       if (!(id && address)) {
         res.status(400).json({ message: "Invalid request" });
       }
+      // Find the NFT to mint in the array of NFT metadata using the ID
+      const nftToMint = nfts.find((n) => n.id === id);
 
       // Ensure that the requested NFT has not yet been minted
-      if (nfts[id].minted === true) {
+      if (nftToMint.minted === true) {
         res.status(400).json({ message: "Invalid request" });
       }
 
       // Allow the minting to happen anytime from now
       const startTime = new Date(0);
-
-      // Find the NFT to mint in the array of NFT metadata using the ID
-      const nftToMint = nfts[id];
 
       // Set up the NFT metadata for signature generation
       const metadata: PayloadToSign721 = {
